@@ -42,14 +42,14 @@ def init_db():
             p1_pos INTEGER DEFAULT 1,
             p2_pos INTEGER DEFAULT 1,
             turn INTEGER,
-            message_id INTEGER
+            p1_msg_id INTEGER,
+            p2_msg_id INTEGER
         )
     ''')
     
     conn.commit()
     conn.close()
 
-# دستورات مدیریت کاربران
 def register_user(user_id, username):
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
@@ -57,7 +57,14 @@ def register_user(user_id, username):
     conn.commit()
     conn.close()
 
-# دستورات مدیریت ادمین‌ها
+def get_total_users_count():
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute('SELECT COUNT(*) FROM users')
+    count = cursor.fetchone()[0]
+    conn.close()
+    return count
+
 def is_admin(user_id):
     if user_id == OWNER_ID:
         return True
@@ -82,7 +89,6 @@ def remove_admin(user_id):
     conn.commit()
     conn.close()
 
-# دستورات مدیریت اسپانسرها
 def get_sponsors():
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
@@ -105,7 +111,6 @@ def remove_sponsor(channel_id):
     conn.commit()
     conn.close()
 
-# مدیریت منطق بازی در دیتابیس
 def create_game(p1_id, p2_id):
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
@@ -118,16 +123,16 @@ def create_game(p1_id, p2_id):
 def get_game(game_id):
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
-    cursor.execute('SELECT p1_id, p2_id, p1_pos, p2_pos, turn, message_id FROM active_games WHERE game_id = ?', (game_id,))
+    cursor.execute('SELECT p1_id, p2_id, p1_pos, p2_pos, turn, p1_msg_id, p2_msg_id FROM active_games WHERE game_id = ?', (game_id,))
     game = cursor.fetchone()
     conn.close()
     return game
 
-def update_game(game_id, p1_pos, p2_pos, turn, message_id=None):
+def update_game(game_id, p1_pos, p2_pos, turn, p1_msg_id=None, p2_msg_id=None):
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
-    if message_id:
-        cursor.execute('UPDATE active_games SET p1_pos = ?, p2_pos = ?, turn = ?, message_id = ? WHERE game_id = ?', (p1_pos, p2_pos, turn, message_id, game_id))
+    if p1_msg_id and p2_msg_id:
+        cursor.execute('UPDATE active_games SET p1_pos = ?, p2_pos = ?, turn = ?, p1_msg_id = ?, p2_msg_id = ? WHERE game_id = ?', (p1_pos, p2_pos, turn, p1_msg_id, p2_msg_id, game_id))
     else:
         cursor.execute('UPDATE active_games SET p1_pos = ?, p2_pos = ?, turn = ? WHERE game_id = ?', (p1_pos, p2_pos, turn, game_id))
     conn.commit()
