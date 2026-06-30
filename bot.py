@@ -80,7 +80,13 @@ def bot_username(context):
 
 # ── عضویت اجباری در کانال ────────────────────────────────────
 async def is_member(context, user_id):
-    """آیا کاربر عضو کانال اجباری هست؟ (ادمین‌ها معاف‌اند)."""
+    """
+    بررسی عضویت کاربر در چنل اسپانسر (ادمین‌ها معاف‌اند).
+    - اگر کاربر صراحتاً خارج/اخراج شده باشد → False (مسدود).
+    - اگر ربات نتواند کانال را بخواند (یعنی در کانال ادمین نیست) → برای اینکه
+      کاربران قفل نشوند True برمی‌گردانیم و در لاگ هشدار می‌دهیم. یعنی تا وقتی
+      ربات را در چنل ادمین نکرده‌اید، اجبارِ عضویت عملاً غیرفعال است.
+    """
     ch = config.REQUIRED_CHANNEL
     if not ch:
         return True
@@ -89,14 +95,16 @@ async def is_member(context, user_id):
     try:
         m = await context.bot.get_chat_member(ch, user_id)
     except Exception as e:
-        log.warning("بررسی عضویت ناموفق بود (آیا ربات در کانال ادمین است؟): %s", e)
+        log.warning(
+            "بررسی عضویت ناموفق بود؛ آیا ربات در «%s» ادمین است؟ خطا: %s", ch, e
+        )
+        return True  # fail-open تا ربات قفل نشود
+    status = str(getattr(m, "status", ""))
+    if status in ("left", "kicked"):
         return False
-    status = getattr(m, "status", "")
-    if status in ("creator", "administrator", "member", "owner"):
-        return True
-    if status == "restricted" and getattr(m, "is_member", False):
-        return True
-    return False
+    if status == "restricted" and not getattr(m, "is_member", True):
+        return False
+    return True
 
 
 async def require_membership_msg(update, context):
@@ -162,7 +170,7 @@ def lobby_text(game):
 
 
 def board_message_text(game, header=""):
-    """متن کامل پیامِ زمین: صفحهٔ بازیِ ایموجی + بازیکنان + نوبت."""
+    """متن کامل پیامِ زمین: صفحهٔ بازیِ کادردار + بازیکنان + نوبت."""
     cfg = config.DIFFICULTIES[game.difficulty]
     size = cfg["cols"] * cfg["rows"]
     parts = []
@@ -170,7 +178,6 @@ def board_message_text(game, header=""):
         parts.append(header)
         parts.append("")
     parts.append(f"🎚 سطح: {cfg['title']} ({T.fa_num(size)} خانه)")
-    parts.append("")
     parts.append("<pre>" + board_grid(game) + "</pre>")
     parts.append("🪜 نردبان • 🐍 مار • 🏁 پایان")
     parts.append("")
@@ -556,6 +563,17 @@ async def cb_roll(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     if cur.user_id != user.id:
         await q.answer("نوبت شما نیست ⏳", show_alert=True)
+        return
+    if not await is_member(context, user.id):
+        await q.answer("برای ادامهٔ بازی باید در چنل اسپانسر عضو بمانید.",
+                       show_alert=True)
+        try:
+            await context.bot.send_message(
+                chat.id, T.join_gate_text(), parse_mode=ParseMode.HTML,
+                reply_markup=kb.join_gate_keyboard(),
+            )
+        except Exception:
+            pass
         return
     if chat.id in busy:
         await q.answer("⏳ صبر کنید، تاس در حال چرخیدن است...")

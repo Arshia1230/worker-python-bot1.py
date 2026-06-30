@@ -53,7 +53,7 @@ def private_menu_keyboard(bot_username=None):
         )])
     rows.append([InlineKeyboardButton("📖 راهنما", callback_data="help")])
     if config.REQUIRED_CHANNEL_URL:
-        rows.append([InlineKeyboardButton("📢 کانال ما",
+        rows.append([InlineKeyboardButton("📢 چنل اسپانسر ما",
                                           url=config.REQUIRED_CHANNEL_URL)])
     return InlineKeyboardMarkup(rows)
 
@@ -62,7 +62,7 @@ def join_gate_keyboard():
     """دکمه‌های صفحهٔ عضویت اجباری."""
     url = config.REQUIRED_CHANNEL_URL or "https://t.me/"
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("📢 عضویت در کانال", url=url)],
+        [InlineKeyboardButton("📢 عضویت در چنل اسپانسر ما", url=url)],
         [InlineKeyboardButton("✅ عضو شدم", callback_data="checkjoin")],
     ])
 

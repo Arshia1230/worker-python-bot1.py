@@ -149,13 +149,12 @@ class Game:
 # ── نمایش متنیِ زمین (خانه‌به‌خانه) ───────────────────────────
 def board_grid(game):
     """
-    صفحهٔ بازی به‌صورت جدول ایموجی (مارپیچی، خانهٔ ۱ پایین-چپ):
-      • عددِ فارسیِ خانه‌های معمولی
+    صفحهٔ بازی به‌صورت جدولِ کادردار (box-drawing)، مارپیچی، خانهٔ ۱ پایین-چپ:
+      • عددِ خانه‌های معمولی (راست‌چین)
       • 🪜 پای نردبان، 🐍 سرِ مار، 🏁 خانهٔ پایان
       • 🔴🔵🟢🟠🟣🟤 جای بازیکن‌ها (👥 اگر چند نفر روی یک خانه)
-    کاراکتر LRM (\u200e) ابتدای هر خط، چینش را چپ‌به‌راست نگه می‌دارد.
+    LRM ابتدای هر خط چینش را چپ‌به‌راست نگه می‌دارد.
     """
-    from texts import fa_num
     player_emojis = ["🔴", "🔵", "🟢", "🟠", "🟣", "🟤"]
     cols, rows, size = game.cols, game.rows, game.size
 
@@ -166,8 +165,20 @@ def board_grid(game):
     ladder_bottoms = set(game.ladders.keys())
     snake_heads = set(game.snakes.keys())
 
-    width = max(2, len(fa_num(size)))
-    out = []
+    W = max(2, len(str(size)))   # عرض هر خانه
+
+    def fmt(tok, is_emoji):
+        if is_emoji:
+            # ایموجی تقریباً دو خانه عرض دارد؛ با فاصله هم‌عرض می‌شود
+            return " " * max(0, W - 2) + tok
+        return str(tok).rjust(W)
+
+    seg = "═" * W
+    top = "╔" + "╦".join([seg] * cols) + "╗"
+    mid = "╠" + "╬".join([seg] * cols) + "╣"
+    bottom = "╚" + "╩".join([seg] * cols) + "╝"
+
+    lines = ["\u200e" + top]
     for r in range(rows - 1, -1, -1):       # از بالا به پایین چاپ می‌کنیم
         cells = []
         for c in range(cols):
@@ -176,17 +187,20 @@ def board_grid(game):
             if n in occ:                                   # بازیکن (اولویت اول)
                 idxs = occ[n]
                 if len(idxs) == 1:
-                    tok = player_emojis[game.players[idxs[0]].color_index % 6]
+                    cells.append(fmt(
+                        player_emojis[game.players[idxs[0]].color_index % 6], True))
                 else:
-                    tok = "👥"
+                    cells.append(fmt("👥", True))
             elif n == size:                                # خانهٔ پایان
-                tok = "🏁"
+                cells.append(fmt("🏁", True))
             elif n in ladder_bottoms:                      # پای نردبان
-                tok = "🪜"
+                cells.append(fmt("🪜", True))
             elif n in snake_heads:                         # سرِ مار
-                tok = "🐍"
+                cells.append(fmt("🐍", True))
             else:
-                tok = fa_num(n)
-            cells.append(tok.rjust(width))
-        out.append("\u200e" + " ".join(cells))
-    return "\n".join(out)
+                cells.append(fmt(n, False))
+        lines.append("\u200e" + "║" + "║".join(cells) + "║")
+        if r > 0:
+            lines.append("\u200e" + mid)
+    lines.append("\u200e" + bottom)
+    return "\n".join(lines)
