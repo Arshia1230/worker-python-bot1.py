@@ -1,80 +1,25 @@
-# -*- coding: utf-8 -*-
-"""کیبوردهای این‌لاین (دکمه‌های شیشه‌ای)."""
-
+# keyboards.py
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
-import config
-from texts import fa_num
+def get_start_keyboard():
+    keyboard = [[InlineKeyboardButton("🎲 جستجوی حریف / شروع بازی", callback_data="find_match")]]
+    return InlineKeyboardMarkup(keyboard)
 
+def get_game_keyboard(game_id):
+    keyboard = [[InlineKeyboardButton("🎲 ریختن تاس", callback_data=f"roll_{game_id}")]]
+    return InlineKeyboardMarkup(keyboard)
 
-def difficulty_keyboard(prefix):
-    """
-    دکمه‌های انتخاب سطح.
-    prefix مشخص می‌کند: بازی گروهی (newdiff) یا با کامپیوتر (botdiff).
-    """
-    rows = []
-    for key, cfg in config.DIFFICULTIES.items():
-        size = cfg["cols"] * cfg["rows"]
-        rows.append([
-            InlineKeyboardButton(
-                f"{cfg['title']} ({fa_num(size)} خانه)",
-                callback_data=f"{prefix}:{key}",
-            )
-        ])
-    return InlineKeyboardMarkup(rows)
-
-
-def lobby_keyboard():
-    """لابی بازی گروهی (داخل گروه)."""
-    return InlineKeyboardMarkup([
-        [InlineKeyboardButton("➕ پیوستن به بازی", callback_data="join")],
-        [
-            InlineKeyboardButton("▶️ شروع بازی", callback_data="startgame"),
-            InlineKeyboardButton("❌ لغو", callback_data="cancel"),
-        ],
-    ])
-
-
-def roll_keyboard():
-    """دکمهٔ تاس."""
-    return InlineKeyboardMarkup([
-        [InlineKeyboardButton("🎲 پرتاب تاس", callback_data="roll")]
-    ])
-
-
-def private_menu_keyboard(bot_username=None):
-    rows = [
-        [InlineKeyboardButton("🤖 بازی با کامپیوتر", callback_data="vsbot")],
+def get_admin_keyboard():
+    keyboard = [
+        [InlineKeyboardButton("📢 مدیریت اسپانسرها", callback_data="manage_sponsors")],
+        [InlineKeyboardButton("👤 مدیریت ادمین‌ها", callback_data="manage_admins")],
+        [InlineKeyboardButton("📊 آمار ربات", callback_data="bot_stats")]
     ]
-    if bot_username:
-        rows.append([InlineKeyboardButton(
-            "👥 بازی با دوستان (افزودن به گروه)",
-            url=f"https://t.me/{bot_username}?startgroup=new",
-        )])
-    rows.append([InlineKeyboardButton("📖 راهنما", callback_data="help")])
-    if config.REQUIRED_CHANNEL_URL:
-        rows.append([InlineKeyboardButton("📢 چنل اسپانسر ما",
-                                          url=config.REQUIRED_CHANNEL_URL)])
-    return InlineKeyboardMarkup(rows)
+    return InlineKeyboardMarkup(keyboard)
 
-
-def join_gate_keyboard():
-    """دکمه‌های صفحهٔ عضویت اجباری."""
-    url = config.REQUIRED_CHANNEL_URL or "https://t.me/"
-    return InlineKeyboardMarkup([
-        [InlineKeyboardButton("📢 عضویت در چنل اسپانسر ما", url=url)],
-        [InlineKeyboardButton("✅ عضو شدم", callback_data="checkjoin")],
-    ])
-
-
-def admin_keyboard(maintenance):
-    maint_label = "🟢 خروج از حالت تعمیر" if maintenance else "🔧 ورود به حالت تعمیر"
-    return InlineKeyboardMarkup([
-        [
-            InlineKeyboardButton("📊 آمار", callback_data="admin:stats"),
-            InlineKeyboardButton("🏆 برترین‌ها", callback_data="admin:top"),
-        ],
-        [InlineKeyboardButton("📢 پیام همگانی", callback_data="admin:broadcast")],
-        [InlineKeyboardButton(maint_label, callback_data="admin:maint")],
-        [InlineKeyboardButton("🔄 بروزرسانی", callback_data="admin:refresh")],
-    ])
+def get_sponsor_keyboard(sponsors):
+    keyboard = []
+    for chan_id, link, name in sponsors:
+        keyboard.append([InlineKeyboardButton(f"📢 عضویت در {name}", url=link)])
+    keyboard.append([InlineKeyboardButton("✅ تایید عضویت", callback_data="check_join")])
+    return InlineKeyboardMarkup(keyboard)
