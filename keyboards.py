@@ -3,17 +3,17 @@
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
-from config import DIFFICULTIES
+import config
 from texts import fa_num
 
 
 def difficulty_keyboard(prefix):
     """
     دکمه‌های انتخاب سطح.
-    prefix یعنی این انتخاب برای بازی گروهی است (newdiff) یا با کامپیوتر (botdiff).
+    prefix مشخص می‌کند: بازی گروهی (newdiff) یا با کامپیوتر (botdiff).
     """
     rows = []
-    for key, cfg in DIFFICULTIES.items():
+    for key, cfg in config.DIFFICULTIES.items():
         size = cfg["cols"] * cfg["rows"]
         rows.append([
             InlineKeyboardButton(
@@ -25,6 +25,7 @@ def difficulty_keyboard(prefix):
 
 
 def lobby_keyboard():
+    """لابی بازی گروهی (داخل گروه)."""
     return InlineKeyboardMarkup([
         [InlineKeyboardButton("➕ پیوستن به بازی", callback_data="join")],
         [
@@ -35,15 +36,34 @@ def lobby_keyboard():
 
 
 def roll_keyboard():
+    """دکمهٔ تاس."""
     return InlineKeyboardMarkup([
         [InlineKeyboardButton("🎲 پرتاب تاس", callback_data="roll")]
     ])
 
 
-def private_menu_keyboard():
+def private_menu_keyboard(bot_username=None):
+    rows = [
+        [InlineKeyboardButton("🤖 بازی با کامپیوتر", callback_data="vsbot")],
+    ]
+    if bot_username:
+        rows.append([InlineKeyboardButton(
+            "👥 بازی با دوستان (افزودن به گروه)",
+            url=f"https://t.me/{bot_username}?startgroup=new",
+        )])
+    rows.append([InlineKeyboardButton("📖 راهنما", callback_data="help")])
+    if config.REQUIRED_CHANNEL_URL:
+        rows.append([InlineKeyboardButton("📢 کانال ما",
+                                          url=config.REQUIRED_CHANNEL_URL)])
+    return InlineKeyboardMarkup(rows)
+
+
+def join_gate_keyboard():
+    """دکمه‌های صفحهٔ عضویت اجباری."""
+    url = config.REQUIRED_CHANNEL_URL or "https://t.me/"
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("🎮 بازی با کامپیوتر", callback_data="vsbot")],
-        [InlineKeyboardButton("📖 راهنما", callback_data="help")],
+        [InlineKeyboardButton("📢 عضویت در کانال", url=url)],
+        [InlineKeyboardButton("✅ عضو شدم", callback_data="checkjoin")],
     ])
 
 
